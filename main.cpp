@@ -12,11 +12,19 @@ struct Point{
     int key = INT_MAX;
     int last = -1;
     bool visited = false;
+    vector<int> children;
+    int cons[2];
+    int nC = 0;
+    bool hasTC = false;
+    int end = -1;
 };
 
 int** matrix;
 vector<Point> points;
 int n;
+int* TOP;
+int topI;
+int startPoint = 0;
 
 void makeMatrix(){
     matrix = new int*[n];
@@ -32,7 +40,7 @@ void makeMatrix(){
 }
 
 void prims(){
-    points.at(0).key = 0;
+    points.at(startPoint).key = 1;
 
     //for each point
     for(int a = 0; a < n; a++){
@@ -55,6 +63,10 @@ void prims(){
         }
 
         points.at(minIndex).visited = true;
+        int L = points.at(minIndex).last;
+        if(L != -1){
+            points.at(L).children.push_back(minIndex);
+        }
 
         //update key values from new lowest key
         for(int c = 0; c < n; c++){
@@ -68,8 +80,120 @@ void prims(){
     }
 }
 
+void topSort(int index){
+    for(int i = 0; i < points.at(index).children.size(); i++){
+        topSort(points.at(index).children.at(i));
+    }
+    TOP[topI] = index;
+    topI -= 1;
+}
+
+void addTopChild(int start, int next){
+    Point* P = & points.at(start);
+    Point* P2 = & points.at(next);
+    for(int i = 0; i < P->children.size(); i++){
+        if(P->children.at(i) == next){
+            P->cons[P->nC] = next;
+            P->nC += 1;
+            P2->cons[P2->nC] = start;
+            P2->nC += 1;
+
+            int temp = P->end;
+            points.at(P->end).end = next;
+            P2->end = temp;
+            return;
+        }
+    }
+    P->hasTC = false;
+}
+
+void addClosest(int in){
+    Point* P = & points.at(in);
+    //exit(1);
+    if(P->nC == 2){
+        cout << "FULL" << endl;
+        return;
+    }
+    int minD = INT_MAX;
+    int minIndex = -1;
+    for(int i = 0; i < n; i++){
+        if(in == i || i == P->end || (P->nC == 1 && P->cons[0] == i)){
+            continue;
+        }
+        assert(i != P->end);
+        if(points.at(i).nC < 2 && matrix[in][i] < minD){
+            minD = matrix[in][i];
+            minIndex = i;
+        }
+    }
+    if(minIndex == -1){
+        P->cons[P->nC] = P->end;
+        P->nC += 1;
+        points.at(P->end).cons[points.at(P->end).nC] = in;
+        points.at(P->end).nC += 1;
+
+        return;
+
+        // cout << P->end << endl;
+        // cout << points.at(P->end).end << endl;
+        // cout << "-----" << endl;
+    }
+    
+
+    P->cons[P->nC] = minIndex; 
+    P->nC += 1;
+    Point* P2 = & points.at(minIndex);
+    P2->cons[P2->nC] = in;
+    P2->nC += 1;
+
+    int e1 = P->end;
+    int e2 = P2->end;
+    points.at(P->end).end = e2;
+    points.at(P2->end).end = e1;
+}
+
+void addTops(){
+    for(int i = n - 1; i >= 0; i--){
+        if(points.at(TOP[i]).nC < 2 && points.at(TOP[i]).hasTC == false){
+            addClosest(TOP[i]);
+        }
+    }
+}
+
+void printPath(){
+    int sum = 0;
+    int prev = startPoint;
+    int cur = points.at(startPoint).cons[0];
+    int next;
+
+    for(int i = 1; i < n; i++){
+        sum += matrix[prev][cur];
+        //cout << cur << endl;
+
+        Point* P = & points.at(cur);
+        
+        if(P->cons[0] == prev){
+            next = P->cons[1];
+        }
+        else if(P->cons[1] == prev){
+            next = P->cons[0];
+        }
+        else{
+            cout << "fail" << endl;
+            exit(1);
+        }
+
+        prev = cur;
+        cur = next;
+    }
+    assert(next == startPoint);
+    sum += matrix[prev][startPoint];
+    //cout << startPoint << endl;
+    cout << sum << endl;
+}
+
 int main(){
-    ifstream infile("test-input-1.txt");
+    ifstream infile("test-input-3.txt");
     int a, b, c;
     Point p;
 
@@ -77,12 +201,50 @@ int main(){
         p.x = b;
         p.y = c;
         p.last = -1;
+        p.end = a;
+        p.nC = 0;
         points.push_back(p);
     }
 
     n = points.size();
 
-    makeMatrix();
-    prims();
+    TOP = new int[n];
+    topI = n - 1;
 
+    makeMatrix();
+    
+
+    prims();
+    topSort(startPoint);
+    for(int i = 0; i < n - 1; i++){
+    addTopChild(TOP[i], TOP[i + 1]);
+    }
+
+    addTops();
+
+    for(int i = 0; i < n; i++){
+        //cout << i << endl;
+        if(points.at(i).nC < 2) addClosest(i);
+    }
+
+    for(int i = 0; i < n; i++){
+        if(points.at(i).nC < 2) cout << i << " " << points.at(i).nC << endl;
+    }
+
+    printPath();
+
+    
 }
+
+
+ //Testing TOP Sort
+    // for(int i = 0; i < n; i++){
+    //     bool fail = true;
+    //     for(int j = 0; j < n; j++){
+    //         if(TOP[i] == j){
+    //             fail = false;
+    //             cout << i << " Found" << endl;
+    //         } 
+    //     }
+    //     assert(! fail);
+    // }
