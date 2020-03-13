@@ -25,7 +25,8 @@ struct Edge{
 Edge** pMatrix;
 vector<Point> points;
 int n;
-int shortP = 10000000;
+int shortP = INT_MAX;
+int* shortPathList = NULL;
 
 void makePMatrix(){
     pMatrix = new Edge*[n];
@@ -53,7 +54,7 @@ int getNext(int pos, bool* vE){
         if(vE[i] == false){
             assert(pos < n);
             assert(i != pos);
-            sum += pow((float) pMatrix[pos][i].oldP, 2) / (float) pow(pMatrix[pos][i].d, 6);
+            sum += pow((float) pMatrix[pos][i].oldP, 2) / (float) pow(pMatrix[pos][i].d, 7);
         }
         
         arr[i] = sum;
@@ -85,22 +86,13 @@ int doAnt(int start){
             perror("failed logic");
             exit(1);
         }
-        pathList[i] = pos;
         Len += pMatrix[pos][next].d;
         pos = next;
+        pathList[i] = pos;
     }
     Len += pMatrix[pos][pathList[n-1]].d;
 
     int prev = n -1;
-
-    // if(Len < shortP){
-    //     q = 1;
-    // }
-    // else{
-    //     q = (float) shortP / (float) Len;
-    // }
-    
-    //q = pow(Len,2) / pow(shortP, 2);
 
     q = 100;
 
@@ -108,8 +100,16 @@ int doAnt(int start){
     for(int i = 0; i < n; i++){
         pMatrix[prev][i].newP += q;
     }
+    
+    if(Len < shortP){
+        free(shortPathList);
+        shortPathList = pathList;
+    }
+    else{
+        free(pathList);
+    }
 
-    free(pathList);
+    
     free(pathVisit);
 
     //printf("Len: %d\n", Len);
@@ -120,7 +120,7 @@ int doAnt(int start){
 void updateP(){
     for(int i = 0; i< n; i++){
         for(int j = 0; j < n; j++){
-            pMatrix[i][j].oldP = pMatrix[i][j].oldP * 0.25 + pMatrix[i][j].newP;
+            pMatrix[i][j].oldP = pMatrix[i][j].oldP * 0.33 + pMatrix[i][j].newP;
             pMatrix[i][j].newP = 0;
         }
     }
@@ -135,7 +135,7 @@ void sendAnts(int num){
 }
 
 int main(){
-    ifstream infile("example-1.txt");
+    ifstream infile("test-input-5.txt");
     int a, b, c;
     Point p;
 
@@ -148,8 +148,12 @@ int main(){
 
     n = points.size();
     makePMatrix();
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 150; i++){
         sendAnts(2 * n);
-        printf("Path Min: %d\n", shortP);
+        //printf("Path Min: %d\n", shortP);
+    }
+    cout << shortP << endl;
+    for(int i = 0; i < n; i++){
+        cout << shortPathList[i] << endl;
     }
 }
