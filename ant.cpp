@@ -35,7 +35,7 @@ void makePMatrix(){
         for(int b = 0; b < n; b++){
             float x = pow(points.at(b).x - points.at(a).x, 2);
             float y = pow(points.at(b).y - points.at(a).y, 2);
-            int dist = (int) sqrt(x + y);
+            int dist = (int) (sqrt(x + y) + 0.5);
             pMatrix[a][b].d = dist;
             pMatrix[a][b].oldP = 10.0; //default starting pharamone value
             pMatrix[a][b].newP = 0;
@@ -100,7 +100,7 @@ int doAnt(int start){
     //     q = (float) shortP / (float) Len;
     // }
     
-    q = pow(Len,2) / pow(shortP, 2);
+    //q = pow(Len,2) / pow(shortP, 2);
 
     q = 100;
 
@@ -120,7 +120,7 @@ int doAnt(int start){
 void updateP(){
     for(int i = 0; i< n; i++){
         for(int j = 0; j < n; j++){
-            pMatrix[i][j].oldP = pMatrix[i][j].oldP * 0.8 + pMatrix[i][j].newP;
+            pMatrix[i][j].oldP = pMatrix[i][j].oldP * 0.25 + pMatrix[i][j].newP;
             pMatrix[i][j].newP = 0;
         }
     }
@@ -135,7 +135,7 @@ void sendAnts(int num){
 }
 
 int main(){
-    ifstream infile("test-input-2.txt");
+    ifstream infile("example-1.txt");
     int a, b, c;
     Point p;
 
@@ -148,7 +148,7 @@ int main(){
 
     n = points.size();
     makePMatrix();
-    for(int i = 0; i < 1000; i++){
+    for(int i = 0; i < 100; i++){
         sendAnts(2 * n);
         printf("Path Min: %d\n", shortP);
     }
